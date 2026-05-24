@@ -2,6 +2,7 @@
   "bazel.buildifierExecutable": "buildifier",
   "bazel.commandLine.executable": "bazel",
 
+  "clangd.path": "/home/gokousuika/.local/bin/clangd",
   "clangd.arguments": [
     "--header-insertion=never",
     "--compile-commands-dir=${workspaceFolder}",
