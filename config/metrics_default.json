@@ -20,6 +20,10 @@
     {
       "name": "drivable_area_checker",
       "paramsJson": "{\"minClearanceM\": 0.35, \"checkCenterOnly\": false}"
+    },
+    {
+      "name": "solid_line_crossing_checker",
+      "paramsJson": "{\"minClearanceM\": 0.25}"
     }
   ]
 }

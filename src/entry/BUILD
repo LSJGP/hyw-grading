@@ -15,6 +15,7 @@ cc_binary(
         "//src/grading/metrics/safety:drivable_area_checker",
         "//src/grading/metrics/safety:lane_departure_checker",
         "//src/grading/metrics/safety:regulatory_collision_checker",
+        "//src/grading/metrics/safety:solid_line_crossing_checker",
         "//src/planning:simple_planner",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",

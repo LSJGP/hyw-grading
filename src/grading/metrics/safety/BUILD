@@ -63,3 +63,22 @@ cc_library(
     ],
     alwayslink = True,
 )
+
+cc_library(
+    name = "solid_line_crossing_checker",
+    srcs = ["solid_line_crossing_checker.cc"],
+    hdrs = ["solid_line_crossing_checker.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":geometry",
+        "@hyw_proto//proto/grading:metric_input_cc_proto",
+        "@hyw_proto//proto/grading:scene_cc_proto",
+        "@hyw_proto//proto/grading/metrics:safety_metric_cc_proto",
+        "//src/grading:metric_base",
+        "//src/grading:metric_register",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_github_gabime_spdlog//:spdlog",
+    ],
+    alwayslink = True,
+)

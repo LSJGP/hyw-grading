@@ -288,12 +288,25 @@ absl::Status BuildMetricInitSpecs(
       }
       owned->push_back(std::move(pb));
       specs->push_back({n, owned->back().get()});
+    } else if (n == "solid_line_crossing_checker") {
+      auto pb = std::make_unique<grading_mini::proto::SolidLineCrossingCheckerConfig>();
+      if (!m.params_json().empty()) {
+        const auto pst = google::protobuf::util::JsonStringToMessage(
+            m.params_json(), pb.get(), jopts);
+        if (!pst.ok()) {
+          return absl::InvalidArgumentError(absl::StrCat(
+              "solid_line_crossing_checker params_json: ",
+              std::string(pst.message())));
+        }
+      }
+      owned->push_back(std::move(pb));
+      specs->push_back({n, owned->back().get()});
     } else {
       return absl::InvalidArgumentError(absl::StrCat(
           "Unknown metric name: ", n,
           " (supported: planning_limit_checker, speed_checker, "
           "regulatory_collision_checker, lane_departure_checker, "
-          "drivable_area_checker)"));
+          "drivable_area_checker, solid_line_crossing_checker)"));
     }
   }
   return absl::OkStatus();
