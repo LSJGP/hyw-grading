@@ -258,6 +258,11 @@ absl::Status BuildMetricInitSpecs(
       }
       owned->push_back(std::move(pb));
       specs->push_back({n, owned->back().get()});
+    } else if (n == "collision_risk_checker") {
+      if (!m.params_json().empty()) {
+        SPDLOG_WARN("collision_risk_checker: params_json is ignored for now");
+      }
+      specs->push_back({n, nullptr});
     } else if (n == "regulatory_collision_checker") {
       if (!m.params_json().empty()) {
         SPDLOG_WARN(
@@ -305,7 +310,7 @@ absl::Status BuildMetricInitSpecs(
       return absl::InvalidArgumentError(absl::StrCat(
           "Unknown metric name: ", n,
           " (supported: planning_limit_checker, speed_checker, "
-          "regulatory_collision_checker, lane_departure_checker, "
+          "collision_risk_checker, regulatory_collision_checker, lane_departure_checker, "
           "drivable_area_checker, solid_line_crossing_checker)"));
     }
   }

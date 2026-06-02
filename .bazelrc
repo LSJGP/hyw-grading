@@ -1,4 +1,12 @@
+# Persist Bazel caches inside the workspace; macOS /var/tmp and the default
+# ~/Library/Caches/bazel output root are cleared or recreated easily, which
+# forces http_archive deps to be re-downloaded on every fresh session.
+startup --output_user_root=.bazel
+common --repository_cache=.bazel/repository_cache
+build --disk_cache=.bazel/disk_cache
+
 common --enable_bzlmod=false
 build --cxxopt=-std=c++17
 # ccache + linux-sandbox: default cache dir is read-only in the sandbox
 build --spawn_strategy=local
+build --macos_minimum_os=10.15

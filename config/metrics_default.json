@@ -14,6 +14,9 @@
       "name": "regulatory_collision_checker"
     },
     {
+      "name": "collision_risk_checker"
+    },
+    {
       "name": "lane_departure_checker",
       "paramsJson": "{\"minRoadEdgeClearanceM\": 0.35, \"minLaneBoundaryClearanceM\": 0.0}"
     },
