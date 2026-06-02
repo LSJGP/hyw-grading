@@ -134,7 +134,9 @@ hyw-grading/
 | `drivable_area_checker`        | safety  | 检查 ego 包络是否在可行驶区域内                                |
 
 
-新增 metric：继承 `MetricBase`，在 `.cc` 末尾 `REGISTER_METRIC(YourChecker, "your_checker")`，并在 `grading_main.cc` 的 `BuildMetricInitSpecs` 与 `src/entry/BUILD` 的 deps 中挂上。
+新增 metric：继承 `MetricBase`，在 `.cc` 末尾 `REGISTER_METRIC(YourChecker, "your_checker")`，并在 `grading_main.cc` 的 `BuildMetricInitSpecs` 与 `src/entry/BUILD` 的 deps 中挂上。可选：在 `config/metrics_default.json` 中写入默认 `paramsJson`。
+
+**hyw-workbench Dashboard** 会在启动时扫描 `REGISTER_METRIC` 并合并 `metrics_default.json`，无需再改 `batch_run_scenarios.py` 里的硬编码列表；未接入 `grading_main` 的 metric 会在前端标注「需配置 grading_main」。
 
 ---
 
