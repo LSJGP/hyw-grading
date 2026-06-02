@@ -129,6 +129,7 @@ hyw-grading/
 | ------------------------------ | ------- | ------------------------------------------------- |
 | `speed_checker`                | example | 检测 `vehicle_state.speed` 是否超过 `maxSpeedThreshold` |
 | `planning_limit_checker`       | example | 检测 `planning_command.desired_speed_mps` 是否超过上限    |
+| `collision_risk_checker`       | example | 基于 TTC / 净空检测碰撞风险（overlap、临界 TTC、近距离闭合）      |
 | `regulatory_collision_checker` | safety  | 基于 ego/NPC OBB 检测碰撞，区分豁免场景（追尾慢车、强行加塞、逆行对向等）       |
 | `lane_departure_checker`       | safety  | 依据 `road_context` 与地图边界检查车道/路沿净空                  |
 | `drivable_area_checker`        | safety  | 检查 ego 包络是否在可行驶区域内                                |

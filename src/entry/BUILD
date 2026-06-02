@@ -10,6 +10,7 @@ cc_binary(
         "@hyw_proto//proto/grading:metric_output_cc_proto",
         "@hyw_proto//proto/grading:sim_log_cc_proto",
         "//src/grading:grader",
+        "//src/grading/metrics/example:collision_risk_checker",
         "//src/grading/metrics/example:planning_limit_checker",
         "//src/grading/metrics/example:speed_checker",
         "//src/grading/metrics/safety:drivable_area_checker",

@@ -1,13 +1,32 @@
-# Bazel
+# Bazel（构建产物与本地缓存，勿提交）
 /bazel-*
 /external/
+.bazel/
 
-# IDE / clangd
+# IDE / clangd（本地生成）
 compile_commands.json
 .vscode/
 .idea/
 .cursor/
+.cache/
 
 # 本地输出 / 日志
 output/
 *.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS / 编辑器临时文件
+.DS_Store
+Thumbs.db
+*.swp
+*~
+*.tmp
