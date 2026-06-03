@@ -35,10 +35,11 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()
 
 # ---- Abseil ----
+# 20240722.0+ includes <cstdint> fix for GCC 15; compatible with protobuf 25.3
 http_archive(
     name = "com_google_absl",
-    strip_prefix = "abseil-cpp-20240116.2",
-    urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20240116.2.tar.gz"],
+    strip_prefix = "abseil-cpp-20240722.0",
+    urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20240722.0.tar.gz"],
 )
 
 # ---- spdlog ----
