@@ -33,7 +33,7 @@ C++ 评分引擎（由原 `grading_mini` 迁出），对智能驾驶仿真结果
 │                       hyw-grading                               │
 │  grading_main → SimplePlanner → Grader → MetricManager → Metrics│
 │                                      │                          │
-│                                      └─→ grading_report.json    │
+│                                      └─→ report/<time>_<scenario>/ │
 └─────────────────────────────────────────────────────────────────┘
          ▲
          │  hyw-proto（MetricFrameInput / SimLog / GradingReport）
@@ -169,7 +169,7 @@ hyw-grading/
 
 **1. 在线模式（`--cpp-mode online`，默认）**
 
-仿真每产生一帧 `FrameRecord`，`StreamPipeWriter` 将其转为 JSON 行写入 `grading_main --stream` 的 stdin；评分进程实时打印每帧 PASS/FAIL，仿真结束后写入 `grading_report.json`。
+仿真每产生一帧 `FrameRecord`，`StreamPipeWriter` 将其转为 JSON 行写入 `grading_main --stream` 的 stdin；评分进程实时打印每帧 PASS/FAIL，仿真结束后写入报告目录（`summary.json` + 各 metric 逐帧 JSON）。
 
 ```bash
 # 在 hyw-sim 目录
@@ -184,7 +184,7 @@ python3 run_sim.py \
 仿真结束后将全量帧写入 `sim_log.json`（`SimLog` Proto 的 JSON 形式），再 shell 调用：
 
 ```text
-grading_main [--metrics-config <json>] <sim_log.json> <grading_report.json>
+grading_main [--metrics-config <json>] <sim_log.json> <report_dir_or.json>
 ```
 
 **3. 两者兼有（`both`）**
@@ -198,7 +198,8 @@ grading_main [--metrics-config <json>] <sim_log.json> <grading_report.json>
 | ----------------------------------- | ----------------------- | -------------------------------- |
 | `output/log/sim_log.json`           | `MetricFrameInput` 序列   | grading 离线输入                     |
 | `output/log/sim_*.log`              | `hyw_sim.proto` 调试 JSON | 仅仿真/planner 调试，**不含** grading 输入 |
-| `output/report/grading_report.json` | `GradingReport`         | 各 metric 通过与否及说明                 |
+| `output/report/<time>_<scenario>/summary.json` | `GradingReport` | 各 metric 通过与否及说明 |
+| `output/report/<time>_<scenario>/<metric>.json` | `MetricDetailReport` | 逐帧判定（含 logLine） |
 
 
 ---
@@ -222,7 +223,7 @@ bazel build //src/entry:grading_main
 ```bash
 ./bazel-bin/src/entry/grading_main \
   --metrics-config config/metrics_default.json \
-  testdata/sample_sim_log.json /tmp/grading_report.json
+  testdata/sample_sim_log.json /tmp/grading_report
 ```
 
 **流式**（stdin 每行一个 `MetricFrameInput` JSON）：
@@ -230,7 +231,7 @@ bazel build //src/entry:grading_main
 ```bash
 ./bazel-bin/src/entry/grading_main --stream \
   --metrics-config config/metrics_default.json \
-  /tmp/grading_report.json
+  /tmp/grading_report
 ```
 
 支持的输入格式：

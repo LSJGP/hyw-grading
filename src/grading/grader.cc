@@ -37,4 +37,16 @@ absl::StatusOr<proto::GradingReport> Grader::Finish() {
   return manager_.GenerateReport();
 }
 
+absl::StatusOr<GradingFinishResult> Grader::FinishAll() {
+  GradingFinishResult result;
+  auto summary_or = manager_.GenerateReport();
+  RETURN_IF_ERROR(summary_or.status());
+  result.summary = std::move(summary_or).value();
+
+  auto details_or = manager_.GenerateMetricDetailReports();
+  RETURN_IF_ERROR(details_or.status());
+  result.details = std::move(details_or).value();
+  return result;
+}
+
 }  // namespace grading_mini

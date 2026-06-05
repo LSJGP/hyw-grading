@@ -1,4 +1,5 @@
 #include <cctype>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -155,18 +156,88 @@ bool LoadMetricInputs(const std::string& path,
   return true;
 }
 
-bool WriteReport(const grading_mini::proto::GradingReport& report,
-                 const std::string& path) {
-  std::string json;
+google::protobuf::util::JsonPrintOptions DefaultJsonPrintOptions() {
   google::protobuf::util::JsonPrintOptions opts;
   opts.always_print_primitive_fields = true;
   opts.add_whitespace = true;
-  auto s = google::protobuf::util::MessageToJsonString(report, &json, opts);
+  return opts;
+}
+
+bool WriteProtoJson(const google::protobuf::Message& message,
+                    const std::string& path) {
+  std::string json;
+  auto s = google::protobuf::util::MessageToJsonString(
+      message, &json, DefaultJsonPrintOptions());
   if (!s.ok()) return false;
   std::ofstream f(path);
   if (!f.is_open()) return false;
   f << json;
   return true;
+}
+
+bool WriteReport(const grading_mini::proto::GradingReport& report,
+                 const std::string& path) {
+  return WriteProtoJson(report, path);
+}
+
+bool IsSingleFileReportPath(const std::string& path) {
+  return EndsWith(path, ".json");
+}
+
+bool WriteReportDirectory(
+    const grading_mini::GradingFinishResult& result,
+    const std::string& dir_path) {
+  std::error_code ec;
+  std::filesystem::create_directories(dir_path, ec);
+  if (ec) {
+    SPDLOG_ERROR("Failed to create report directory {}: {}", dir_path,
+                 ec.message());
+    return false;
+  }
+
+  const std::string summary_path =
+      (std::filesystem::path(dir_path) / "summary.json").string();
+  if (!WriteReport(result.summary, summary_path)) {
+    SPDLOG_ERROR("Failed to write summary report: {}", summary_path);
+    return false;
+  }
+
+  for (const auto& detail : result.details) {
+    const std::string metric_path =
+        (std::filesystem::path(dir_path) / (detail.metric_name() + ".json"))
+            .string();
+    if (!WriteProtoJson(detail, metric_path)) {
+      SPDLOG_ERROR("Failed to write metric report: {}", metric_path);
+      return false;
+    }
+  }
+
+  SPDLOG_INFO("Report directory written to: {} ({} metric files)",
+              dir_path, result.details.size());
+  return true;
+}
+
+bool WriteGradingOutput(const grading_mini::GradingFinishResult& result,
+                        const std::string& output_path) {
+  if (IsSingleFileReportPath(output_path)) {
+    return WriteReport(result.summary, output_path);
+  }
+  return WriteReportDirectory(result, output_path);
+}
+
+void PrintGradingResult(const grading_mini::proto::GradingReport& report,
+                        int64_t frame_count = -1) {
+  std::cout << "=== Result: "
+            << (report.overall_passed() ? "PASSED" : "FAILED") << " ===";
+  if (frame_count >= 0) {
+    std::cout << " (" << frame_count << " frames)";
+  }
+  std::cout << std::endl;
+  for (const auto& s : report.summaries()) {
+    std::cout << "  " << s.metric_name() << ": "
+              << (s.passed() ? "PASS" : "FAIL") << " (" << s.detail() << ")"
+              << std::endl;
+  }
 }
 
 void ApplySpdlogLevel(const std::string& raw) {
@@ -373,25 +444,19 @@ bool RunBatch(const std::string& input_path, const std::string& output_path,
     }
   }
 
-  auto report_or = grader.Finish();
-  if (!report_or.ok()) {
+  auto result_or = grader.FinishAll();
+  if (!result_or.ok()) {
     SPDLOG_ERROR("Report failed: {}",
-                 std::string(report_or.status().message()));
+                 std::string(result_or.status().message()));
     return false;
   }
 
-  if (WriteReport(report_or.value(), output_path)) {
-    SPDLOG_INFO("Report written to: {}", output_path);
+  if (!WriteGradingOutput(result_or.value(), output_path)) {
+    SPDLOG_ERROR("Failed to write grading output: {}", output_path);
+    return false;
   }
 
-  std::cout << "=== Result: "
-            << (report_or.value().overall_passed() ? "PASSED" : "FAILED")
-            << " ===" << std::endl;
-  for (const auto& s : report_or.value().summaries()) {
-    std::cout << "  " << s.metric_name() << ": "
-              << (s.passed() ? "PASS" : "FAIL") << " (" << s.detail() << ")"
-              << std::endl;
-  }
+  PrintGradingResult(result_or.value().summary);
   return true;
 }
 
@@ -461,25 +526,19 @@ bool RunStream(const std::string& output_path,
     ++processed;
   }
 
-  auto report_or = grader.Finish();
-  if (!report_or.ok()) {
+  auto result_or = grader.FinishAll();
+  if (!result_or.ok()) {
     SPDLOG_ERROR("Report failed: {}",
-                 std::string(report_or.status().message()));
+                 std::string(result_or.status().message()));
     return false;
   }
 
-  if (WriteReport(report_or.value(), output_path)) {
-    SPDLOG_INFO("Report written to: {}", output_path);
+  if (!WriteGradingOutput(result_or.value(), output_path)) {
+    SPDLOG_ERROR("Failed to write grading output: {}", output_path);
+    return false;
   }
 
-  std::cout << "=== Result: "
-            << (report_or.value().overall_passed() ? "PASSED" : "FAILED")
-            << " === (" << processed << " frames)" << std::endl;
-  for (const auto& s : report_or.value().summaries()) {
-    std::cout << "  " << s.metric_name() << ": "
-              << (s.passed() ? "PASS" : "FAIL") << " (" << s.detail() << ")"
-              << std::endl;
-  }
+  PrintGradingResult(result_or.value().summary, processed);
   return true;
 }
 
@@ -547,7 +606,7 @@ int main(int argc, char** argv) {
 
   if (cli.stream_mode) {
     const std::string out = cli.positional.empty()
-                                ? "/tmp/grading_output.json"
+                                ? "/tmp/grading_output"
                                 : cli.positional[0];
     if (cli.positional.size() > 1) {
       std::cerr << "[grading_main] too many arguments for --stream mode\n";
@@ -563,7 +622,7 @@ int main(int argc, char** argv) {
   }
   const std::string& in = cli.positional[0];
   const std::string out = cli.positional.size() > 1 ? cli.positional[1]
-                                                    : "/tmp/grading_output.json";
+                                                    : "/tmp/grading_output";
   if (cli.positional.size() > 2) {
     std::cerr << "[grading_main] too many positional arguments\n";
     PrintUsage(argv[0]);

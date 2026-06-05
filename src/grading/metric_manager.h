@@ -27,16 +27,27 @@ class MetricManager {
 
   absl::StatusOr<proto::GradingReport> GenerateReport();
 
+  absl::StatusOr<std::vector<proto::MetricDetailReport>>
+  GenerateMetricDetailReports();
+
   // Returns (metric_name, bool_value) for the last frame processed, in DAG
   // topological order. Caller-side helper for streaming integrations.
   std::vector<std::pair<std::string, bool>> LastFrameVerdicts() const;
 
  private:
+  struct FrameContext {
+    int64_t frame_id = 0;
+    int64_t timestamp_us = 0;
+    double speed_mps = 0.0;
+    bool collided = false;
+  };
+
   std::unordered_map<std::string, std::unique_ptr<MetricBase>> metrics_;
   std::unordered_map<std::string,
                      std::unique_ptr<Payload<MetricFrameOutput>>>
       payloads_;
   std::unique_ptr<DAGScheduler::UpdatePlan> plan_;
+  std::vector<FrameContext> frame_contexts_;
 };
 
 }  // namespace grading_mini

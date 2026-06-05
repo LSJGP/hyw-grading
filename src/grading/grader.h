@@ -24,6 +24,11 @@ struct MetricInitSpec {
   const google::protobuf::Message* config = nullptr;
 };
 
+struct GradingFinishResult {
+  proto::GradingReport summary;
+  std::vector<proto::MetricDetailReport> details;
+};
+
 class Grader {
  public:
   Grader() = default;
@@ -32,6 +37,7 @@ class Grader {
   absl::Status Init(const std::vector<std::string>& metric_names);
   absl::Status ProcessFrame(const MetricFrameInput& input);
   absl::StatusOr<proto::GradingReport> Finish();
+  absl::StatusOr<GradingFinishResult> FinishAll();
 
   // Per-metric pass/fail recorded for the most-recently-processed frame.
   // Order follows the DAG topological order. Empty until the first frame is

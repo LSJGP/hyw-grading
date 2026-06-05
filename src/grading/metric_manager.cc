@@ -1,10 +1,25 @@
 #include "src/grading/metric_manager.h"
 
+#include <sstream>
+
 #include "spdlog/spdlog.h"
 
 #include "src/grading/macros.h"
 
 namespace grading_mini {
+
+namespace {
+
+std::string FormatLogLine(int64_t frame_id, int64_t timestamp_us, double speed_mps,
+                          bool collided, bool passed) {
+  std::ostringstream oss;
+  oss << "frame=" << frame_id << " t=" << (timestamp_us / 1e6) << "s"
+      << " v=" << speed_mps << " coll=" << (collided ? "Y" : "n") << " "
+      << (passed ? "PASS" : "FAIL");
+  return oss.str();
+}
+
+}  // namespace
 
 absl::Status MetricManager::AddMetric(const std::string& name,
                                       std::unique_ptr<MetricBase> metric) {
@@ -51,6 +66,14 @@ absl::Status MetricManager::BuildGraph() {
 absl::Status MetricManager::RunOneFrame(const MetricFrameInput& input) {
   if (!plan_) return absl::FailedPreconditionError("Graph not built");
 
+  FrameContext ctx;
+  ctx.frame_id = input.frame_id();
+  ctx.timestamp_us = input.timestamp_us();
+  ctx.speed_mps = input.vehicle_state().speed();
+  ctx.collided =
+      input.has_collision_event() && input.collision_event().collided();
+  frame_contexts_.push_back(ctx);
+
   for (const auto& level : *plan_) {
     for (const auto& name : level) {
       auto& metric = metrics_[name];
@@ -61,6 +84,7 @@ absl::Status MetricManager::RunOneFrame(const MetricFrameInput& input) {
           metric->CalculateOneFrame(input, payload->data(), &output));
 
       output.set_frame_id(input.frame_id());
+      output.set_timestamp_us(input.timestamp_us());
       payload->InsertData(output);
       payload->MaintainOnce();
     }
@@ -108,6 +132,70 @@ absl::StatusOr<proto::GradingReport> MetricManager::GenerateReport() {
     }
   }
   return report;
+}
+
+absl::StatusOr<std::vector<proto::MetricDetailReport>>
+MetricManager::GenerateMetricDetailReports() {
+  if (!plan_) return absl::FailedPreconditionError("Graph not built");
+
+  std::unordered_map<int64_t, const FrameContext*> ctx_by_frame;
+  ctx_by_frame.reserve(frame_contexts_.size());
+  for (const auto& ctx : frame_contexts_) {
+    ctx_by_frame[ctx.frame_id] = &ctx;
+  }
+
+  std::vector<proto::MetricDetailReport> reports;
+  for (const auto& level : *plan_) {
+    for (const auto& name : level) {
+      auto& metric = metrics_[name];
+      auto& payload = payloads_[name];
+
+      auto summary_or = metric->SummarizeResult(payload->data());
+      if (!summary_or.ok()) {
+        SPDLOG_WARN("Summarize [{}] failed: {}", name,
+                    std::string(summary_or.status().message()));
+        continue;
+      }
+
+      const auto summary = std::move(summary_or).value();
+      proto::MetricDetailReport detail;
+      detail.set_metric_name(summary.metric_name().empty() ? name
+                                                           : summary.metric_name());
+      detail.set_passed(summary.passed());
+      detail.set_summary(summary.detail());
+
+      for (const auto& output : payload->data()) {
+        auto* frame = detail.add_frames();
+        frame->set_frame_id(output.frame_id());
+        frame->set_passed(output.bool_value());
+
+        const FrameContext* ctx = nullptr;
+        auto it = ctx_by_frame.find(output.frame_id());
+        if (it != ctx_by_frame.end()) {
+          ctx = it->second;
+        }
+
+        const int64_t timestamp_us =
+            output.timestamp_us() != 0
+                ? output.timestamp_us()
+                : (ctx ? ctx->timestamp_us : 0);
+        frame->set_timestamp_us(timestamp_us);
+        frame->set_speed_mps(ctx ? ctx->speed_mps : 0.0);
+        frame->set_collided(ctx ? ctx->collided : false);
+
+        frame->set_log_line(FormatLogLine(
+            output.frame_id(), timestamp_us, ctx ? ctx->speed_mps : 0.0,
+            ctx ? ctx->collided : false, output.bool_value()));
+
+        if (output.has_custom_info()) {
+          frame->mutable_custom_info()->CopyFrom(output.custom_info());
+        }
+      }
+
+      reports.push_back(std::move(detail));
+    }
+  }
+  return reports;
 }
 
 }  // namespace grading_mini
