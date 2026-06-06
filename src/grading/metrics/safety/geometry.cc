@@ -43,6 +43,76 @@ Obb2D MakeEgoObb(const proto::MetricFrameInput& input) {
   return box;
 }
 
+namespace {
+
+bool IsSolidLineType(const std::string& type) {
+  return type == "TYPE_SOLID_SINGLE_WHITE" ||
+         type == "TYPE_SOLID_DOUBLE_WHITE" ||
+         type == "TYPE_SOLID_SINGLE_YELLOW" ||
+         type == "TYPE_SOLID_DOUBLE_YELLOW" ||
+         type == "TYPE_PASSING_DOUBLE_YELLOW";
+}
+
+double Cross2D(double ax, double ay, double bx, double by, double cx, double cy) {
+  return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+}
+
+bool OnSegment(double ax, double ay, double bx, double by, double cx, double cy) {
+  return std::min(ax, bx) - 1e-9 <= cx && cx <= std::max(ax, bx) + 1e-9 &&
+         std::min(ay, by) - 1e-9 <= cy && cy <= std::max(ay, by) + 1e-9;
+}
+
+}  // namespace
+
+bool SegmentsIntersect(double ax, double ay, double bx, double by, double cx,
+                       double cy, double dx, double dy) {
+  const double d1 = Cross2D(cx, cy, dx, dy, ax, ay);
+  const double d2 = Cross2D(cx, cy, dx, dy, bx, by);
+  const double d3 = Cross2D(ax, ay, bx, by, cx, cy);
+  const double d4 = Cross2D(ax, ay, bx, by, dx, dy);
+
+  if (((d1 > 0.0 && d2 < 0.0) || (d1 < 0.0 && d2 > 0.0)) &&
+      ((d3 > 0.0 && d4 < 0.0) || (d3 < 0.0 && d4 > 0.0))) {
+    return true;
+  }
+
+  if (std::fabs(d1) < 1e-9 && OnSegment(cx, cy, dx, dy, ax, ay)) return true;
+  if (std::fabs(d2) < 1e-9 && OnSegment(cx, cy, dx, dy, bx, by)) return true;
+  if (std::fabs(d3) < 1e-9 && OnSegment(ax, ay, bx, by, cx, cy)) return true;
+  if (std::fabs(d4) < 1e-9 && OnSegment(ax, ay, bx, by, dx, dy)) return true;
+  return false;
+}
+
+bool ObbEdgesIntersectSegment(const Obb2D& box, double x1, double y1, double x2,
+                              double y2) {
+  const auto corners = ObbCorners(box);
+  for (int i = 0; i < 4; ++i) {
+    const int j = (i + 1) % 4;
+    if (SegmentsIntersect(corners[i][0], corners[i][1], corners[j][0],
+                          corners[j][1], x1, y1, x2, y2)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool EgoObbIntersectsSolidLines(const proto::MetricFrameInput& input,
+                                const proto::SceneMap& map) {
+  const Obb2D box = MakeEgoObb(input);
+  for (const auto& line : map.road_lines()) {
+    if (!IsSolidLineType(line.type())) continue;
+    if (line.polyline_size() < 2) continue;
+    for (int i = 0; i + 1 < line.polyline_size(); ++i) {
+      const auto& p0 = line.polyline(i);
+      const auto& p1 = line.polyline(i + 1);
+      if (ObbEdgesIntersectSegment(box, p0.x(), p0.y(), p1.x(), p1.y())) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 double PointToSegmentDist(double px, double py, double x1, double y1, double x2,
                           double y2) {
   const double dx = x2 - x1;

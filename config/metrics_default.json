@@ -25,8 +25,7 @@
       "paramsJson": "{\"minClearanceM\": 0.35, \"checkCenterOnly\": false}"
     },
     {
-      "name": "solid_line_crossing_checker",
-      "paramsJson": "{\"minClearanceM\": 0.25}"
+      "name": "solid_line_crossing_checker"
     }
   ]
 }

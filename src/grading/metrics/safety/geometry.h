@@ -22,6 +22,15 @@ Obb2D MakeEgoObb(const proto::MetricFrameInput& input);
 double PointToSegmentDist(double px, double py, double x1, double y1, double x2,
                           double y2);
 
+bool SegmentsIntersect(double ax, double ay, double bx, double by, double cx,
+                       double cy, double dx, double dy);
+
+bool ObbEdgesIntersectSegment(const Obb2D& box, double x1, double y1, double x2,
+                              double y2);
+
+bool EgoObbIntersectsSolidLines(const proto::MetricFrameInput& input,
+                                const proto::SceneMap& map);
+
 double MinDistToRoadEdges(const proto::SceneMap& map, double x, double y);
 
 }  // namespace grading_mini
