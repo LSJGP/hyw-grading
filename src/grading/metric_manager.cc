@@ -10,12 +10,19 @@ namespace grading_mini {
 
 namespace {
 
+bool IsCollisionMetric(const std::string& name) {
+  return name.find("collision") != std::string::npos;
+}
+
 std::string FormatLogLine(int64_t frame_id, int64_t timestamp_us, double speed_mps,
-                          bool collided, bool passed) {
+                          bool collided, bool passed, bool include_collision) {
   std::ostringstream oss;
   oss << "frame=" << frame_id << " t=" << (timestamp_us / 1e6) << "s"
-      << " v=" << speed_mps << " coll=" << (collided ? "Y" : "n") << " "
-      << (passed ? "PASS" : "FAIL");
+      << " v=" << speed_mps;
+  if (include_collision) {
+    oss << " coll=" << (collided ? "Y" : "n");
+  }
+  oss << " " << (passed ? "PASS" : "FAIL");
   return oss.str();
 }
 
@@ -158,9 +165,12 @@ MetricManager::GenerateMetricDetailReports() {
       }
 
       const auto summary = std::move(summary_or).value();
+      const std::string metric_name =
+          summary.metric_name().empty() ? name : summary.metric_name();
+      const bool include_collision = IsCollisionMetric(metric_name);
+
       proto::MetricDetailReport detail;
-      detail.set_metric_name(summary.metric_name().empty() ? name
-                                                           : summary.metric_name());
+      detail.set_metric_name(metric_name);
       detail.set_passed(summary.passed());
       detail.set_summary(summary.detail());
 
@@ -181,11 +191,14 @@ MetricManager::GenerateMetricDetailReports() {
                 : (ctx ? ctx->timestamp_us : 0);
         frame->set_timestamp_us(timestamp_us);
         frame->set_speed_mps(ctx ? ctx->speed_mps : 0.0);
-        frame->set_collided(ctx ? ctx->collided : false);
+        if (include_collision) {
+          frame->set_collided(ctx ? ctx->collided : false);
+        }
 
         frame->set_log_line(FormatLogLine(
             output.frame_id(), timestamp_us, ctx ? ctx->speed_mps : 0.0,
-            ctx ? ctx->collided : false, output.bool_value()));
+            ctx ? ctx->collided : false, output.bool_value(),
+            include_collision));
 
         if (output.has_custom_info()) {
           frame->mutable_custom_info()->CopyFrom(output.custom_info());
