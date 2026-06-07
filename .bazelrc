@@ -2,7 +2,5 @@ try-import %workspace%/../.bazelrc.cache
 
 common --enable_bzlmod=false
 build --cxxopt=-std=c++17
-# ccache + linux-sandbox: default cache dir is read-only in the sandbox
-build --spawn_strategy=local
 
 try-import %workspace%/.bazelrc.local

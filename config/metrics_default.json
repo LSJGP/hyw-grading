@@ -14,7 +14,8 @@
       "name": "regulatory_collision_checker"
     },
     {
-      "name": "collision_risk_checker"
+      "name": "collision_risk_checker",
+      "paramsJson": "{\"pathLateralTolM\": 1.0, \"maxLongitudinalM\": 40.0, \"maxLateralM\": 1.2, \"minClosingSpeedMps\": 0.5, \"minForwardCos\": 0.94, \"pathNpcWidthRatio\": 0.25}"
     },
     {
       "name": "lane_departure_checker",

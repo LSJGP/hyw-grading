@@ -330,10 +330,19 @@ absl::Status BuildMetricInitSpecs(
       owned->push_back(std::move(pb));
       specs->push_back({n, owned->back().get()});
     } else if (n == "collision_risk_checker") {
+      auto pb =
+          std::make_unique<grading_mini::proto::CollisionRiskCheckerConfig>();
       if (!m.params_json().empty()) {
-        SPDLOG_WARN("collision_risk_checker: params_json is ignored for now");
+        const auto pst = google::protobuf::util::JsonStringToMessage(
+            m.params_json(), pb.get(), jopts);
+        if (!pst.ok()) {
+          return absl::InvalidArgumentError(absl::StrCat(
+              "collision_risk_checker params_json: ",
+              std::string(pst.message())));
+        }
       }
-      specs->push_back({n, nullptr});
+      owned->push_back(std::move(pb));
+      specs->push_back({n, owned->back().get()});
     } else if (n == "regulatory_collision_checker") {
       if (!m.params_json().empty()) {
         SPDLOG_WARN(
