@@ -141,4 +141,12 @@ double MinDistToRoadEdges(const proto::SceneMap& map, double x, double y) {
   return best;
 }
 
+double Cross2D(double ax, double ay, double bx, double by) {
+  return ax * by - ay * bx;
+}
+
+double Dot2D(double ax, double ay, double bx, double by) {
+  return ax * bx + ay * by;
+}
+
 }  // namespace grading_mini

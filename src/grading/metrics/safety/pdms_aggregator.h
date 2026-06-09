@@ -1,13 +1,14 @@
 #pragma once
 
-#include "proto/grading/scene.pb.h"
 #include "src/grading/metric_base.h"
 #include "src/grading/metric_register.h"
 
 namespace grading_mini {
 
-class LaneDepartureChecker : public MetricBase {
+class PdmsAggregator : public MetricBase {
  public:
+  PdmsAggregator();
+
   absl::Status Init(const google::protobuf::Message* config) override;
 
   absl::Status CalculateOneFrame(
@@ -19,15 +20,11 @@ class LaneDepartureChecker : public MetricBase {
       const std::deque<MetricFrameOutput>& history) override;
 
  private:
-  double MinRoadEdgeDistance(const proto::SceneMap& map, double x, double y) const;
-  double MinCornerRoadEdgeDistance(const MetricFrameInput& input) const;
-
-  double min_road_edge_clearance_m_ = 0.35;
-  double min_lane_boundary_clearance_m_ = 0.0;
-  bool has_scene_map_ = false;
-  proto::SceneMap scene_map_;
-  int total_frames_ = 0;
-  int violation_frames_ = 0;
+  double weight_ep_ = 5.0;
+  double weight_ttc_ = 5.0;
+  double weight_c_ = 2.0;
+  double weight_speed_ = 0.5;
+  double pass_threshold_ = 0.95;
 };
 
 }  // namespace grading_mini

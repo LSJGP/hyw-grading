@@ -5,7 +5,7 @@
 
 namespace grading_mini {
 
-class PlanningLimitChecker : public MetricBase {
+class HardBrakingChecker : public MetricBase {
  public:
   absl::Status Init(const google::protobuf::Message* config) override;
 
@@ -18,7 +18,8 @@ class PlanningLimitChecker : public MetricBase {
       const std::deque<MetricFrameOutput>& history) override;
 
  private:
-  double max_speed_mps_ = 33.3;
+  double min_decel_threshold_mps2_ = 4.0;
+  double min_speed_mps_ = 1.0;
   int violation_frames_ = 0;
   int total_frames_ = 0;
 };

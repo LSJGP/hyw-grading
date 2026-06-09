@@ -33,4 +33,8 @@ bool EgoObbIntersectsSolidLines(const proto::MetricFrameInput& input,
 
 double MinDistToRoadEdges(const proto::SceneMap& map, double x, double y);
 
+double Cross2D(double ax, double ay, double bx, double by);
+
+double Dot2D(double ax, double ay, double bx, double by);
+
 }  // namespace grading_mini

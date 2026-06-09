@@ -233,6 +233,9 @@ void PrintGradingResult(const grading_mini::proto::GradingReport& report,
     std::cout << " (" << frame_count << " frames)";
   }
   std::cout << std::endl;
+  if (report.has_pdms_score()) {
+    std::cout << "  PDMS: " << report.pdms_score() << std::endl;
+  }
   for (const auto& s : report.summaries()) {
     std::cout << "  " << s.metric_name() << ": "
               << (s.passed() ? "PASS" : "FAIL") << " (" << s.detail() << ")"
@@ -263,7 +266,6 @@ void ApplySpdlogLevel(const std::string& raw) {
 grading_mini::proto::GradingRunConfig DefaultRunConfig() {
   grading_mini::proto::GradingRunConfig c;
   c.set_simple_planner_max_speed_mps(33.3);
-  c.add_metrics()->set_name("planning_limit_checker");
   c.add_metrics()->set_name("speed_checker");
   c.add_metrics()->set_name("regulatory_collision_checker");
   return c;
@@ -317,18 +319,6 @@ absl::Status BuildMetricInitSpecs(
       }
       owned->push_back(std::move(pb));
       specs->push_back({n, owned->back().get()});
-    } else if (n == "planning_limit_checker") {
-      auto pb = std::make_unique<grading_mini::proto::PlanningLimitCheckerConfig>();
-      if (!m.params_json().empty()) {
-        const auto pst = google::protobuf::util::JsonStringToMessage(
-            m.params_json(), pb.get(), jopts);
-        if (!pst.ok()) {
-          return absl::InvalidArgumentError(absl::StrCat(
-              "planning_limit_checker params_json: ", std::string(pst.message())));
-        }
-      }
-      owned->push_back(std::move(pb));
-      specs->push_back({n, owned->back().get()});
     } else if (n == "collision_risk_checker") {
       auto pb =
           std::make_unique<grading_mini::proto::CollisionRiskCheckerConfig>();
@@ -349,18 +339,6 @@ absl::Status BuildMetricInitSpecs(
             "regulatory_collision_checker: params_json is ignored for now");
       }
       specs->push_back({n, nullptr});
-    } else if (n == "lane_departure_checker") {
-      auto pb = std::make_unique<grading_mini::proto::LaneDepartureCheckerConfig>();
-      if (!m.params_json().empty()) {
-        const auto pst = google::protobuf::util::JsonStringToMessage(
-            m.params_json(), pb.get(), jopts);
-        if (!pst.ok()) {
-          return absl::InvalidArgumentError(absl::StrCat(
-              "lane_departure_checker params_json: ", std::string(pst.message())));
-        }
-      }
-      owned->push_back(std::move(pb));
-      specs->push_back({n, owned->back().get()});
     } else if (n == "drivable_area_checker") {
       auto pb = std::make_unique<grading_mini::proto::DrivableAreaCheckerConfig>();
       if (!m.params_json().empty()) {
@@ -386,12 +364,51 @@ absl::Status BuildMetricInitSpecs(
       }
       owned->push_back(std::move(pb));
       specs->push_back({n, owned->back().get()});
+    } else if (n == "hard_braking_checker") {
+      auto pb = std::make_unique<grading_mini::proto::HardBrakingCheckerConfig>();
+      if (!m.params_json().empty()) {
+        const auto pst = google::protobuf::util::JsonStringToMessage(
+            m.params_json(), pb.get(), jopts);
+        if (!pst.ok()) {
+          return absl::InvalidArgumentError(absl::StrCat(
+              "hard_braking_checker params_json: ",
+              std::string(pst.message())));
+        }
+      }
+      owned->push_back(std::move(pb));
+      specs->push_back({n, owned->back().get()});
+    } else if (n == "ego_progress_checker") {
+      auto pb = std::make_unique<grading_mini::proto::EgoProgressCheckerConfig>();
+      if (!m.params_json().empty()) {
+        const auto pst = google::protobuf::util::JsonStringToMessage(
+            m.params_json(), pb.get(), jopts);
+        if (!pst.ok()) {
+          return absl::InvalidArgumentError(absl::StrCat(
+              "ego_progress_checker params_json: ",
+              std::string(pst.message())));
+        }
+      }
+      owned->push_back(std::move(pb));
+      specs->push_back({n, owned->back().get()});
+    } else if (n == "pdms_aggregator") {
+      auto pb = std::make_unique<grading_mini::proto::PdmsAggregatorConfig>();
+      if (!m.params_json().empty()) {
+        const auto pst = google::protobuf::util::JsonStringToMessage(
+            m.params_json(), pb.get(), jopts);
+        if (!pst.ok()) {
+          return absl::InvalidArgumentError(absl::StrCat(
+              "pdms_aggregator params_json: ", std::string(pst.message())));
+        }
+      }
+      owned->push_back(std::move(pb));
+      specs->push_back({n, owned->back().get()});
     } else {
       return absl::InvalidArgumentError(absl::StrCat(
           "Unknown metric name: ", n,
-          " (supported: planning_limit_checker, speed_checker, "
-          "collision_risk_checker, regulatory_collision_checker, lane_departure_checker, "
-          "drivable_area_checker, solid_line_crossing_checker)"));
+          " (supported: speed_checker, "
+          "collision_risk_checker, regulatory_collision_checker, "
+          "drivable_area_checker, solid_line_crossing_checker, hard_braking_checker, "
+          "ego_progress_checker, pdms_aggregator)"));
     }
   }
   return absl::OkStatus();

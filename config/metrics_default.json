@@ -3,10 +3,6 @@
   "spdlogLevel": "info",
   "metrics": [
     {
-      "name": "planning_limit_checker",
-      "paramsJson": "{\"maxDesiredSpeedMps\": 33.3}"
-    },
-    {
       "name": "speed_checker",
       "paramsJson": "{\"maxSpeedThreshold\": 33.3}"
     },
@@ -18,15 +14,23 @@
       "paramsJson": "{\"pathLateralTolM\": 1.0, \"maxLongitudinalM\": 40.0, \"maxLateralM\": 1.2, \"minClosingSpeedMps\": 0.5, \"minForwardCos\": 0.94, \"pathNpcWidthRatio\": 0.25}"
     },
     {
-      "name": "lane_departure_checker",
-      "paramsJson": "{\"minRoadEdgeClearanceM\": 0.35, \"minLaneBoundaryClearanceM\": 0.0}"
-    },
-    {
       "name": "drivable_area_checker",
       "paramsJson": "{\"minClearanceM\": 0.35, \"checkCenterOnly\": false}"
     },
     {
       "name": "solid_line_crossing_checker"
+    },
+    {
+      "name": "hard_braking_checker",
+      "paramsJson": "{\"minDecelThresholdMps2\": 4.0, \"minSpeedMps\": 1.0}"
+    },
+    {
+      "name": "ego_progress_checker",
+      "paramsJson": "{\"progressExponent\": 2.0, \"passThreshold\": 0.95}"
+    },
+    {
+      "name": "pdms_aggregator",
+      "paramsJson": "{\"weightEp\": 5, \"weightTtc\": 5, \"weightC\": 2, \"weightSpeed\": 0.5, \"passThreshold\": 0.95}"
     }
   ]
 }

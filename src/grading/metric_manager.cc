@@ -119,6 +119,9 @@ absl::StatusOr<proto::GradingReport> MetricManager::GenerateReport() {
   proto::GradingReport report;
   report.set_overall_passed(true);
 
+  const bool use_pdms_overall = metrics_.count("pdms_aggregator") > 0;
+  bool pdms_passed = false;
+
   for (const auto& level : *plan_) {
     for (const auto& name : level) {
       auto& metric = metrics_[name];
@@ -135,8 +138,20 @@ absl::StatusOr<proto::GradingReport> MetricManager::GenerateReport() {
       if (summary.metric_name().empty()) summary.set_metric_name(name);
       report.add_summaries()->CopyFrom(summary);
 
-      if (!summary.passed()) report.set_overall_passed(false);
+      if (name == "pdms_aggregator") {
+        pdms_passed = summary.passed();
+        if (summary.has_score()) {
+          report.set_pdms_score(summary.score());
+        }
+        report.mutable_pdms_subscores()->CopyFrom(summary.subscores());
+      } else if (!use_pdms_overall && !summary.passed()) {
+        report.set_overall_passed(false);
+      }
     }
+  }
+
+  if (use_pdms_overall) {
+    report.set_overall_passed(pdms_passed);
   }
   return report;
 }
