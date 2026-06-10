@@ -1,0 +1,3 @@
+# Local overrides (not committed). Bypass ccache wrapper so linux-sandbox can compile.
+build --action_env=CC=/usr/bin/gcc
+build --action_env=CXX=/usr/bin/g++
