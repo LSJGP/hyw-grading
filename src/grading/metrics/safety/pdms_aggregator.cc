@@ -38,7 +38,7 @@ double FrameEpScore(const MetricFrameOutput& output) {
   }
   proto::EgoProgressCheckerCustomInfo info;
   if (output.custom_info().UnpackTo(&info)) {
-    return info.frame_score();
+    return info.combined_frame_score();
   }
   return 0.0;
 }

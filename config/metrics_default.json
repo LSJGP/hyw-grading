@@ -4,7 +4,7 @@
   "metrics": [
     {
       "name": "speed_checker",
-      "paramsJson": "{\"maxSpeedThreshold\": 33.3}"
+      "paramsJson": "{\"maxSpeedThreshold\": 33.3, \"minSpeedThresholdMps\": 2.0, \"maxAccelerationMps2\": 3.5}"
     },
     {
       "name": "regulatory_collision_checker"
@@ -26,7 +26,7 @@
     },
     {
       "name": "ego_progress_checker",
-      "paramsJson": "{\"progressExponent\": 2.0, \"passThreshold\": 0.95}"
+      "paramsJson": "{\"progressExponent\": 2.0, \"passThreshold\": 0.95, \"efficiencyWeight\": 0.5}"
     },
     {
       "name": "pdms_aggregator",

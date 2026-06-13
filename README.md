@@ -260,6 +260,7 @@ bazel build //src/entry:grading_main
 
 ## 相关文档
 
+- **PDMS 综合评分**：`[docs/pdms_guide.md](docs/pdms_guide.md)`
 - Proto 字段详解：`[../hyw-proto/README.md](../hyw-proto/README.md)`
 - 仿真启动参数与 grading 开关：`[../hyw-sim/启动参数说明.md](../hyw-sim/启动参数说明.md)`
 - highD 场景数据：`[docs/highD_dataset_guide.md](docs/highD_dataset_guide.md)`

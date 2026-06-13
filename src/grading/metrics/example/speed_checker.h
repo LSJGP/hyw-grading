@@ -20,7 +20,11 @@ class SpeedChecker : public MetricBase {
 
  private:
   double max_speed_ = 33.3;
-  int violation_count_ = 0;
+  double min_speed_ = 2.0;
+  double max_acceleration_ = 3.5;
+  int overspeed_violations_ = 0;
+  int too_slow_violations_ = 0;
+  int excessive_accel_violations_ = 0;
   int total_frames_ = 0;
 };
 
